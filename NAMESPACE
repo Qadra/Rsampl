@@ -1,0 +1,3 @@
+export("echo_function")
+
+useDynLib(Rsampl, wrs_)

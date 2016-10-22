@@ -5,7 +5,7 @@ Title: Rsampl sampling library
 Authors@R: c(
 		person("Kasper Sacharias Roos Eenberg", "Developer", role = c("aut", "cre"), 
 			email = "kse@mahavira.dk"),
-		person("Morten Houmøller Nygaard", "Developer", role = "aut", 
+		person("Morten Houmoeller Nygaard", "Developer", role = "aut", 
 			email="morten@mortz.dk"),
 		person("Jonas Nicolai Hovmand", "Developer", role = "ctb",
 			email = "jonas@hovmand.eu"))
