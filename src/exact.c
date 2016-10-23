@@ -3,7 +3,10 @@
 #include <string.h>
 #include <math.h>
 
-#include "xutil.h"
+#include <Rmath.h>
+
+#include <R_ext/RS.h>		/* for Calloc() */
+
 #include "exact.h"
 
 exact_t *exact_preprocess(int k, int n, double *w) {
@@ -11,19 +14,19 @@ exact_t *exact_preprocess(int k, int n, double *w) {
 	int nodes          = n-1;
 	double *p;
 
-	exact_t *e         = xmalloc( sizeof(exact_t) );
+	exact_t *e         = malloc( sizeof(exact_t) );
 	e->n               = n;
 	e->w               = w;
-	e->p      = p      = xmalloc( nodes*sizeof(double) );
+	e->p      = p      = Calloc(nodes, double);
 	e->height = height = floor(log2(n)+1);
 	e->leaves = leaves = nodes-((1 << (height-1))-1);
 
 	e->round           = 0;
-	e->scales          = xmalloc( 2*n*sizeof(double) );
-	e->scales_round    = xmalloc( 2*n*sizeof(int) );
+	e->scales          = Calloc(2*n, double);
+	e->scales_round    = Calloc(2*n, int);
 
-	memset(e->scales_round, 0, 2*n*sizeof(int));
-	memset(e->scales, 0, 2*n*sizeof(double));
+	Memzero(e->scales_round, 2 * n);
+	Memzero(e->scales, 2 * n);
 
 	idx = n-1;
 	for (j = leaves, i = leaves*2; j > 0; i-=2, j--, idx--) {
@@ -73,7 +76,7 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 			scale = scales[key];
 		}
 
-  		rand = xuni_rand()*(p[key]-scale);
+  		rand = unif_rand() * (p[key] - scale);
 
 		// Search binary tree
 		while (idx < n) {
@@ -157,10 +160,10 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 
 void exact_free(exact_t *e){
 	if ( NULL != e ) {
-		if (NULL != e->scales_round) free(e->scales_round);
-		if (NULL != e->scales) free(e->scales);
-		if (NULL != e->p) free(e->p);
+		if (NULL != e->scales_round) Free(e->scales_round);
+		if (NULL != e->scales) Free(e->scales);
+		if (NULL != e->p) Free(e->p);
 
-		free(e);
+		Free(e);
 	}
 }

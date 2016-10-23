@@ -1,4 +1,8 @@
-sample <- function(A, k = 1) {
-	n <- length(A)
-	return(.Call(sample_, A, n, k))
+sample <- function(A, W, k = 1) {
+	if (length(A) != length(W)) {
+		stop("input A and W must be of same length")
+	}
+
+	idx <- .Call(sample_impl, W, k)
+	return(idx)
 }

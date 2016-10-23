@@ -15,3 +15,4 @@ Description: Collection of sampling algorithms.
 License: GPL (>= 2)
 URL: https://www.r-project.org, https://github.com/Qadra/Rsampl 
 BugReports: https://github.com/Qadra/Rsampl/issues
+Suggests: testthat

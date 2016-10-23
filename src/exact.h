@@ -1,6 +1,9 @@
 #ifndef H_exact
 #define H_exact
 
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
+
 typedef struct {
 	unsigned int n;
 	double      *w;
