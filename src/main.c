@@ -21,6 +21,8 @@ SEXP sample_impl(SEXP A_, SEXP k_) {
 	PROTECT(res = allocVector(INTSXP, k));
 
 	GetRNGstate();
+	
+	// Do the sampling
 	exact_sample(E, INTEGER(res), k, n);
 	PutRNGstate();
 

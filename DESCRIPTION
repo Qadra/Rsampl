@@ -9,10 +9,14 @@ Authors@R: c(
 			email="morten@mortz.dk"),
 		person("Jonas Nicolai Hovmand", "Developer", role = "ctb",
 			email = "jonas@hovmand.eu"))
-Depends: R (>= 3.1.0)
+Depends:
+    R (>= 3.1.0)
 OS_type: unix
 Description: Collection of sampling algorithms.
 License: GPL (>= 2)
-URL: https://www.r-project.org, https://github.com/Qadra/Rsampl 
+URL: https://www.r-project.org, https://github.com/Qadra/Rsampl
 BugReports: https://github.com/Qadra/Rsampl/issues
-Suggests: testthat
+Suggests:
+    covr,
+    testthat
+RoxygenNote: 5.0.1
