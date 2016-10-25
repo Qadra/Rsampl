@@ -93,7 +93,7 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 				// balanced binary tree (FBBT). If we have reached a left leaf 
 				// outside the FBBT, we instead calculate the offset of the 
 				// parent, which will be the offset we have to add to the index.
-				if ( likely( nodes != n ) && level == height ) {
+				if ( unlikely( nodes != n ) && level == height ) {
 					index += (key/2) & ((1 << (level-1))-1);
 				} else {
 					index += leaves;
