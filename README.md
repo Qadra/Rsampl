@@ -6,4 +6,4 @@
 Implementation of Weighted Random Sampling algorithms for R.
 
 The current implementation of Weighted Random Sampling in R is an *n²*
-algorithm, this repository currently contains an *k log(n)* solution.
+algorithm, this repository currently contains a *k log(n)* solution.
