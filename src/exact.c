@@ -14,7 +14,7 @@ exact_t *exact_preprocess(int k, int n, double *w) {
 	int nodes          = n-1;
 	double *p;
 
-	exact_t *e         = malloc( sizeof(exact_t) );
+	exact_t *e         = Calloc(1, exact_t);
 	e->n               = n;
 	e->w               = w;
 	e->p      = p      = Calloc(nodes, double);
