@@ -1,0 +1,29 @@
+#sample_int_R(n, size, prob)
+#sample_int_ccrank(n, size, prob)
+#sample_int_crank(n, size, prob)
+#sample_int_expj(n, size, prob)
+#sample_int_expjs(n, size, prob)
+#sample_int_rank(n, size, prob)
+#sample_int_rej(n, size, prob)
+
+library(ggplot2)
+library(Rsampl)
+library(wrswoR)
+
+benchmark <- function(n = 1000, k = 250, times=1000) {
+	B <- runif(n)
+	B <- B/sum(B)
+
+	bm <- microbenchmark(times=times,
+						 BIN=Rsampl::sample(1:n, B, k),
+						 CCRANK=sample_int_ccrank(n, k, B),
+						 CRANK=sample_int_crank(n, k, B),
+						 EXPJ=sample_int_expj(n, k, B),
+						 #EXPJS=sample_int_expjs(n, k, B),
+						 RANK=sample_int_rank(n, k, B),
+						 REJ=sample_int_rej(n, k, B)
+						 #R=sample_int_R(n, k, B)
+						 )
+
+	return(bm)
+}
