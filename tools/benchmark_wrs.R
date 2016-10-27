@@ -9,9 +9,10 @@
 library(ggplot2)
 library(Rsampl)
 library(wrswoR)
+library(microbenchmark)
 
 benchmark <- function(n = 1000, k = 250, times=1000) {
-	B <- runif(n)
+	B <- rexp(n)
 	B <- B/sum(B)
 
 	bm <- microbenchmark(times=times,
