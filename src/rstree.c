@@ -73,7 +73,7 @@ static inline int __bucket_index(double pi, int64_t L) {
 	T rep = {
 		.f = pi
 	};
-	
+
 	//int preexp;
 	//frexp(pi, &preexp);
 
@@ -93,7 +93,6 @@ static inline int __bucket_index(double pi, int64_t L) {
 		exp = L;
 	}
 
-	//printf("%d == %"PRId64", %f\n", preexp, exp, pi);
 
 	return exp;
 }
@@ -144,7 +143,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 
 	int bsum = 0;
 	for (i = 0; i <= L; i++) {
-		//printf("Bucket size[%d] = %d\n", i, bucket_sizes[i]);
 		bucket_prefix[i] = bsum;
 		bsum += bucket_sizes[i];
 	}
@@ -186,7 +184,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 
 	int tree_size = 2 * buckets - 1,
 		inline_index = tree_size - 1;
-	//Rprintf("Allocating '%d' things of size '%d'\n", tree_size, sizeof(node_t));
 	inline_tree = Calloc(tree_size, node_t);
 
 	/**
@@ -208,6 +205,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 		node->array.offset = bucket_prefix[i];
 		node->array.bucket_index = --buckets;
 		node->index = INT_MAX;
+		node->parent_index = INT_MAX;
 		this->buckets[buckets] = node;
 
 		__queue_insert(qA, node);
@@ -219,11 +217,20 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 	while (1) {
 		node_t *a = qA->nodes[qA->offset++];
 
-		Rprintf("qA size: %d, qA offset: %d\n", qA->size, qA->offset);
-		Rprintf("qB size: %d, qB offset: %d\n", qB->size, qB->offset);
-
 		// Either we have only one node left
 		if (qA->size == qA->offset) {
+			if (a->type == NODE_ARRAY && inline_index == 0) {
+				// If this happens, we only have a single array in our tree.
+				// This means we don't hit the else case here and thus our
+				// node is not copied into the array. For this reason we need
+				// to add it to the tree here.
+				
+				a->index = inline_index;
+				this->buckets[a->array.bucket_index] = &inline_tree[inline_index];
+				memcpy(&inline_tree[inline_index], a, sizeof(node_t));
+				free(a);
+				a = &inline_tree[inline_index];
+			}
 
 			__queue_insert(qB, a);
 
@@ -233,9 +240,8 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 				a->index = index;
 				memcpy(&inline_tree[index], a, sizeof(node_t));
 
-				free(a);
+				Free(a);
 				a = &inline_tree[index];
-				//printf("Copying to index %d\n", index);
 
 				if (a->type == NODE_ARRAY) {
 					this->buckets[a->array.bucket_index] = &inline_tree[index];
@@ -248,9 +254,8 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 				b->index = index;
 				memcpy(&inline_tree[index], b, sizeof(node_t));
 
-				free(b);
+				Free(b);
 				b = &inline_tree[index];
-				//printf("Copying to index %d\n", index);
 
 				if (b->type == NODE_ARRAY) {
 					this->buckets[b->array.bucket_index] = &inline_tree[index];
@@ -271,7 +276,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 			parent->parent = NULL;
 			parent->parent_index = INT_MAX;
 
-
 			a->parent = parent;
 			a->parent_index = parent->index;
 
@@ -280,9 +284,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 
 			__queue_insert(qB, parent);
 		}
-
-		Rprintf("qA size: %d, qA offset: %d\n", qA->size, qA->offset);
-		Rprintf("qB size: %d, qB offset: %d\n", qB->size, qB->offset);
 
 		if (qA->size == qA->offset) {
 			if (qB->size == 1) {
@@ -297,7 +298,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 		}
 	}
 
-	//memcpy(inline_tree, qB->nodes[0], sizeof(node_t));
 	this->tree = inline_tree;
 
 	Free(qA->nodes);

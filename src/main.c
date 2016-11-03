@@ -20,7 +20,7 @@ SEXP sample_impl(SEXP A_, SEXP k_) {
 	rstree_t *E = rstree_preprocess(k, n, A);
 
 	// Create return output
-	PROTECT(res = allocVector(INTSXP, k));
+	res = PROTECT(allocVector(INTSXP, k));
 
 	GetRNGstate();
 	
