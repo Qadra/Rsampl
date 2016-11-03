@@ -38,3 +38,12 @@ for (n in c(32, 45, 50, 64, 95, 100)) {
 				  }
 	})
 }
+
+test_that("should handle uniform input", {
+			  S <- 1:100
+			  W <- rep(1/100, 100)
+			  k <- 10
+
+			  res <- Rsampl::sample(S, W, k=k)
+			  expect_equal(length(res), k)
+	})
