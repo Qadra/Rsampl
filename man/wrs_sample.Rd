@@ -27,6 +27,9 @@ sampling method used.}
 Perform Weighted Random Sampling
 }
 \examples{
-sample(1:100, rep(1/100, 100), k = 10)
+wrs_sample(1:100, rep(1/100, 100), k = 10, method='binary')
+
+wrs_sample(1:100, rep(1/100, 100), k = 10, method='rstree')
+
 }
 
