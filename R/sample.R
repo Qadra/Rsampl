@@ -24,7 +24,7 @@ check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary') {
 #' @param struct a preprocessed chunk of data.
 #' @return \code{k} indices sampled according to weights
 #' @examples
-#' sample(1:100, rep(1/100, 100), k = 10)
+#' wrs_sample(1:100, rep(1/100, 100), k = 10)
 #' @export
 wrs_sample <- function(A = NULL, W = NULL, k = 1, method = 'binary', struct) {
 	check_preconditions_for_wrs(A, W, k, method)
