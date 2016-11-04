@@ -4,6 +4,10 @@ language: R
 sudo: false
 cache: packages
 
+# Currently disabled as sample code is integrated elsewhere and functions
+# calling exit cannot be removed.
+warnings_are_errors: false
+
 r_github_packages:
       - jimhester/covr
 
