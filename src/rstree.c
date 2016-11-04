@@ -1,58 +1,21 @@
 #include "rstree.h"
 
+#include "defs.h"
+#include "xutil.h"
+
 #include <limits.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
-
-#include <Rmath.h>     /* for unif_rand() */
-#include <R_ext/RS.h>  /* for Calloc() */
-#include <R_ext/Print.h> /* for Rprintf() */
-
-void normalize_array(int n, double *w) {
-	int i;
-	double sum = 0.0;
-
-	for (i = 0; i < n; i++) {
-		sum += w[i];
-	}
-
-	for (i = 0; i < n; i++) {
-		w[i] /= sum;
-	}
-}
-
-inline int xceil_log2(unsigned long long x) {
-	static const unsigned long long t[6] = {
-		0xFFFFFFFF00000000ull,
-		0x00000000FFFF0000ull,
-		0x000000000000FF00ull,
-		0x00000000000000F0ull,
-		0x000000000000000Cull,
-		0x0000000000000002ull
-	};
-
-	int y = (((x & (x - 1)) == 0) ? 0 : 1);
-	int j = 32;
-	int i;
-
-	for (i = 0; i < 6; i++) {
-		int k = (((x & t[i]) == 0) ? 0 : j);
-		y += k;
-		x >>= k;
-		j >>= 1;
-	}
-
-	return y;
-}
 
 static int64_t mask = ~0xFFFFFFFFFFFFF,
 		mask2 = 0x7FF;
 
 static inline void __queue_insert(queue_t *queue, node_t *node) {
 	if (queue->allocated < queue->size + 1) {
-		queue->nodes = Realloc(queue->nodes, (queue->allocated + 1) * 2, node_t*);
+		queue->nodes = XREALLOC(queue->nodes, ((queue->allocated + 1) * 2), node_t*);
 		queue->allocated = (queue->allocated + 1) * 2;
 	}
 
@@ -61,9 +24,7 @@ static inline void __queue_insert(queue_t *queue, node_t *node) {
 }
 
 static inline void __queue_insert_fast(queue_t *queue, node_t *node) {
-	if(queue->allocated <= queue->size)  {
-		error("Trying to write queue out of bounds");
-	}
+	assert(queue->allocated > queue->size);
 	queue->nodes[queue->size] = node;
 	queue->size++;
 }
@@ -73,7 +34,7 @@ static inline int __bucket_index(double pi, int64_t L) {
 	T rep = {
 		.f = pi
 	};
-
+	
 	//int preexp;
 	//frexp(pi, &preexp);
 
@@ -93,35 +54,38 @@ static inline int __bucket_index(double pi, int64_t L) {
 		exp = L;
 	}
 
-
 	return exp;
 }
 
 // TODO: L should be adjusted so we rarely, if ever, need to visit the last
 // bucket.
-rstree_t *rstree_preprocess(int k, int n, double *w) {
+rstree_t *rstree_preprocess(double *weights, int n, int k) {
+	// Parameter k must be there because of function pointers in sample.h
+	(void)k;
+
 	int L = xceil_log2(n) * 1.3,
-		*bucket_sizes  = Calloc((L + 1), int),
-		*bucket_prefix = Calloc((L + 1), int),
-		*reverse_map   = Calloc(n, int),
+		*bucket_sizes  = XALLOC(L + 1, int),
+		*bucket_prefix = XALLOC(L + 1, int),
+		*reverse_map   = XALLOC(n,     int),
 		i;
 
 	if (L > 63) {
 		L = 63;
 	};
 
-	double *w_shuffled = Calloc(n, double),
-		   *bucket_max = Calloc(L + 1, double);
+	double *w = weights,
+		   *w_shuffled = XALLOC(n,     double),
+		   *bucket_max = XALLOC(L + 1, double);
 
 	node_t *inline_tree;
 
-	rstree_t *this = Calloc(1, rstree_t);
-	Memzero(this, 1);
+	rstree_t *this = XALLOC(1, rstree_t);
+	memset(this, 0, sizeof(rstree_t));
 
 	this->w = w_shuffled;
 	this->reverse_map = reverse_map;
 	this->queue.allocated = xceil_log2(L);
-	this->queue.nodes = Calloc(this->queue.allocated, node_t*);
+	this->queue.nodes = XALLOC(this->queue.allocated, node_t*);
 
 	// Clamp, so total sum equals 1.
 	normalize_array(n, w);
@@ -160,6 +124,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 		int offset = bucket_sizes[idx] + bucket_prefix[idx];
 
 		w_shuffled[offset] = w[i];
+		assert(offset >= 0 && offset < n);
 		reverse_map[offset] = i;
 		bucket_sizes[idx]++;
 	}
@@ -167,11 +132,11 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 	/**
 	 * Add the buckets to a queue for construction.
 	 */
-	queue_t *qA = Calloc(1, queue_t);
-	Memzero(qA, 1);
+	queue_t *qA = XALLOC(1, queue_t);
+	XMEMZERO(qA, 1);
 
-	queue_t *qB = Calloc(1, queue_t);
-	Memzero(qB, 1);
+	queue_t *qB = XALLOC(1, queue_t);
+	XMEMZERO(qB, 1);
 
 	int buckets = 0;
 	for (i = L; i >= 0; i--) {
@@ -180,11 +145,11 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 		}
 		buckets++;
 	}
-	this->buckets = Calloc(buckets, node_t*);
+	this->buckets = XALLOC(buckets, node_t*);
 
 	int tree_size = 2 * buckets - 1,
 		inline_index = tree_size - 1;
-	inline_tree = Calloc(tree_size, node_t);
+	inline_tree = XALLOC(tree_size, node_t);
 
 	/**
 	 * Create the last elements of our tree
@@ -194,7 +159,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 			continue;
 		}
 
-		node_t *node = Calloc(1, node_t);
+		node_t *node = XALLOC(1, node_t);
 		node->type = NODE_ARRAY;
 		node->array.size = bucket_sizes[i];
 		node->array.p_hat = bucket_max[i];
@@ -216,7 +181,6 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 	 */
 	while (1) {
 		node_t *a = qA->nodes[qA->offset++];
-
 		// Either we have only one node left
 		if (qA->size == qA->offset) {
 			if (a->type == NODE_ARRAY && inline_index == 0) {
@@ -228,7 +192,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 				a->index = inline_index;
 				this->buckets[a->array.bucket_index] = &inline_tree[inline_index];
 				memcpy(&inline_tree[inline_index], a, sizeof(node_t));
-				free(a);
+				XFREE(a);
 				a = &inline_tree[inline_index];
 			}
 
@@ -240,7 +204,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 				a->index = index;
 				memcpy(&inline_tree[index], a, sizeof(node_t));
 
-				Free(a);
+				XFREE(a);
 				a = &inline_tree[index];
 
 				if (a->type == NODE_ARRAY) {
@@ -254,7 +218,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 				b->index = index;
 				memcpy(&inline_tree[index], b, sizeof(node_t));
 
-				Free(b);
+				XFREE(b);
 				b = &inline_tree[index];
 
 				if (b->type == NODE_ARRAY) {
@@ -275,6 +239,7 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 			parent->internal.child_sum = a->internal.child_sum + b->internal.child_sum;
 			parent->parent = NULL;
 			parent->parent_index = INT_MAX;
+
 
 			a->parent = parent;
 			a->parent_index = parent->index;
@@ -298,20 +263,23 @@ rstree_t *rstree_preprocess(int k, int n, double *w) {
 		}
 	}
 
+	//assert(qB->size == 1);
+	//memcpy(inline_tree, qB->nodes[0], sizeof(node_t));
 	this->tree = inline_tree;
 
-	Free(qA->nodes);
-	Free(qA);
-	Free(qB->nodes);
-	Free(qB);
-	Free(bucket_sizes);
-	Free(bucket_prefix);
-	Free(bucket_max);
+	XFREE(qA->nodes);
+	XFREE(qA);
+	XFREE(qB->nodes);
+	XFREE(qB);
+	XFREE(bucket_sizes);
+	XFREE(bucket_prefix);
+	XFREE(bucket_max);
 
 	return this;
 }
 
-int rstree_sample(rstree_t *st, int *samples, int k, int n) {
+int rstree_sample(rstree_t *this, int k, int *sampled) {
+	rstree_t *st = this;
 	node_t *nodes = st->tree;
 	double *w = st->w;
 	int sampled_buckets = 0;
@@ -321,7 +289,7 @@ int rstree_sample(rstree_t *st, int *samples, int k, int n) {
 	// We sample k numbers.
 	for (int i = 0; i < k; i++) {
 		node_t *n = &nodes[0];
-		double rand = unif_rand() * n->internal.child_sum;
+		double rand = XRANDFUN() * n->internal.child_sum;
 		double sample_weight = 0.0;
 
 		do {
@@ -344,13 +312,15 @@ int rstree_sample(rstree_t *st, int *samples, int k, int n) {
 				int randvar = (int)(rand/n->array.p_hat);
 				int idx = arr->offset + arr->sampled_size + randvar;
 
-				if (unif_rand() > w[idx]/n->array.p_hat) {
+				assert(idx >= 0);
+
+				if (XRANDFUN() > w[idx]/n->array.p_hat) {
 					// Cancel this sample.
 					i--;
 					goto REDO;
 				}
 
-				samples[i] = st->reverse_map[idx];
+				sampled[i] = st->reverse_map[idx];
 				sample_weight = n->array.p_hat;
 
 				// We now have one less element to sample here.
@@ -379,6 +349,8 @@ int rstree_sample(rstree_t *st, int *samples, int k, int n) {
 				st->reverse_map[offset + sampled_size] = map;
 
 				arr->sampled_size++; // All done
+
+				assert(n->array.size >= 0);
 
 				/**
 				 * Swap around the sampled buckets, so we can reset the tree
@@ -441,12 +413,12 @@ REDO:
 
 void rstree_free(rstree_t *st) {
 	if (st != NULL) {
-		Free(st->reverse_map);
-		Free(st->w);
-		Free(st->buckets);
-		Free(st->queue.nodes);
-		Free(st->tree);
+		XFREE(st->reverse_map);
+		XFREE(st->w);
+		XFREE(st->buckets);
+		XFREE(st->queue.nodes);
+		XFREE(st->tree);
 
-		Free(st);
+		XFREE(st);
 	}
 }

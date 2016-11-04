@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-#define likely(x)      __builtin_expect(!!(x), 1)
-#define unlikely(x)    __builtin_expect(!!(x), 0)
+#include "sample.h"
 
 enum NODE_TYPE {
 	NODE_TREE,
@@ -65,8 +64,8 @@ typedef struct {
 	node_t * tree;
 } rstree_t;
 
-rstree_t *rstree_preprocess(int k, int n, double *w);
-int rstree_sample(rstree_t *st, int *samples, int k, int n);
+rstree_t *rstree_preprocess(double *weights, int n, int k);
+int rstree_sample(rstree_t *this, int k, int *sampled);
 void rstree_free(rstree_t *st);
 
 #endif

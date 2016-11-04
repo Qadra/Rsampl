@@ -3,30 +3,37 @@
 #include <string.h>
 #include <math.h>
 
-#include <Rmath.h>
-
-#include <R_ext/RS.h>		/* for Calloc() */
-
+#include "defs.h"
+#include "xutil.h"
+#include "sample.h"
 #include "exact.h"
 
-exact_t *exact_preprocess(int k, int n, double *w) {
+exact_t *exact_preprocess(double *weights, int n, int k) {
+
+	// Unused but required parameter for function prototype matching.
+	(void)k;
+
 	int i, j, idx, height, leaves;
 	int nodes          = n-1;
-	double *p;
+	double *p, *w      = weights;
 
-	exact_t *e         = Calloc(1, exact_t);
+	exact_t *e         = XALLOC(1, exact_t);
 	e->n               = n;
 	e->w               = w;
-	e->p      = p      = Calloc(nodes, double);
+	e->p      = p      = XALLOC(nodes, double);
 	e->height = height = floor(log2(n)+1);
 	e->leaves = leaves = nodes-((1 << (height-1))-1);
 
+#ifdef H_exact_list
+	e->scales          = XALLOC(k*(log2(n)+2), tuple_t);
+#else
 	e->round           = 0;
-	e->scales          = Calloc(2*n, double);
-	e->scales_round    = Calloc(2*n, int);
+	e->scales          = XALLOC(2*n, double);
+	e->scales_round    = XALLOC(2*n, int);
 
-	Memzero(e->scales_round, 2 * n);
-	Memzero(e->scales, 2 * n);
+	memset(e->scales_round, 0, 2*n*sizeof(int));
+	memset(e->scales, 0, 2*n*sizeof(double));
+#endif
 
 	idx = n-1;
 	for (j = leaves, i = leaves*2; j > 0; i-=2, j--, idx--) {
@@ -47,24 +54,35 @@ exact_t *exact_preprocess(int k, int n, double *w) {
 		idx--;
 	}
 
+//	IACA_END
+
 	return e;
 }
 
-void *exact_sample(exact_t *e, int *sampled, int k, int n) {
+int exact_sample(exact_t *this, int k, int *sampled) {
 	int i, idx, level, index; 
 	double rand, scale, left_child;
+	exact_t *e            = this;
 	int	key               = 0,
+		n                 = this->n,
 		height            = e->height,
 		leaves            = e->leaves,
 		nodes             = (1 << height),
 		samples           = 0;
 	double *p             = e->p,
 	       *w             = e->w;
+
+#ifdef H_exact_list
+	tuple_t *t;
+	tuple_t *list         = e->scales;
+	e->round              = 0;
+#else
 	int     round         = e->round;
 	double *scales		  = e->scales;
 	int    *scales_round  = e->scales_round;
 
 	e->round             += 1;
+#endif
 
 	for (i = 0; i < k; i++) {
 		idx   = 1;
@@ -72,11 +90,14 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 		scale = 0.;
 		key   = idx-1;
 
+#ifdef H_exact_list
+		scale = 0.;
+#else
 		if (scales_round[key] == round) {
 			scale = scales[key];
 		}
-
-  		rand = unif_rand() * (p[key] - scale);
+#endif
+  		rand = XRANDFUN()*(p[key]-scale);
 
 		// Search binary tree
 		while (idx < n) {
@@ -93,7 +114,7 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 				// balanced binary tree (FBBT). If we have reached a left leaf 
 				// outside the FBBT, we instead calculate the offset of the 
 				// parent, which will be the offset we have to add to the index.
-				if ( unlikely( nodes != n ) && level == height ) {
+				if ( likely( nodes != n ) && level == height ) {
 					index += (key/2) & ((1 << (level-1))-1);
 				} else {
 					index += leaves;
@@ -106,11 +127,15 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 
 			key -= 1;
 
+#ifdef H_exact_list
+			scale = 0.;
+#else
 			if (scales_round[key] == round) {
 				scale = scales[key];
 			} else {
 				scale = 0.;
 			}
+#endif
 
 			idx = (idx << 1);
 			if (rand > (left_child-scale)) {
@@ -139,31 +164,70 @@ void *exact_sample(exact_t *e, int *sampled, int k, int n) {
 		key                = idx-1;
 
 		// Insert scale of leaf node
+#ifdef H_exact_list
+		t = list + e->round;
+		t->i = index;
+		t->w = scale = w[index];
+		t->e = true;
+		e->round++;
+		w[index] = 0.;	
+#else
 		scales[key] = scale = w[index];
 		scales_round[key] = round;
+#endif
 		
 		// Update scale values according to the path visited in the tree
 		while (idx > 1) {
 			idx = idx/2;
 			key = idx-1;
-
+				
+#ifdef H_exact_list
+			t = list + e->round;
+			t->i = key;
+			t->w = scale;
+			t->e = false;
+			p[key] -= scale;
+			e->round++;
+#else
 			if (scales_round[key] == round) {
 				scales[key] += scale;
 			} else {
 				scales[key]       = scale;
 				scales_round[key] = round;
 			}
+#endif
 		}
 
 	}
+
+#ifdef H_exact_list
+	for (i = 0; i < e->round; i++) {
+		t = list + i;
+		if (t->e) {
+			w[t->i] += t->w;
+		} else {
+			p[t->i] += t->w;
+		}
+	}
+#endif
+
+	return samples;
 }
 
 void exact_free(exact_t *e){
 	if ( NULL != e ) {
-		if (NULL != e->scales_round) Free(e->scales_round);
-		if (NULL != e->scales) Free(e->scales);
-		if (NULL != e->p) Free(e->p);
+#ifndef H_exact_list 
+		if (NULL != e->scales_round) {
+			XFREE(e->scales_round);
+		}
+#endif
+		if (NULL != e->scales) {
+			XFREE(e->scales);
+		}
 
-		Free(e);
+		if (NULL != e->p) {
+			XFREE(e->p);
+		}
+		XFREE(e);
 	}
 }
