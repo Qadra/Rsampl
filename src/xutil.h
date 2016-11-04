@@ -26,16 +26,6 @@ inline double xuni_rand(void) {
 	return ((I1 << 16)^(I2 & 0177777)) * 2.328306437080797e-10; /* in [0,1) */
 }
 
-static inline double xuni_rand_hw(void) {
-	long long unsigned rand = 0;
-
-	if (_rdrand64_step(&rand) == 1) {
-		return (double) rand/UINTMAX_MAX;
-	} else {
-		return xuni_rand();
-	}
-}
-
 inline int xceil_log2(unsigned long long x) {
 	static const unsigned long long t[6] = {
 		0xFFFFFFFF00000000ull,
