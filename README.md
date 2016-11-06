@@ -6,7 +6,26 @@
 Implementation of Weighted Random Sampling algorithms for R.
 
 The current implementation of Weighted Random Sampling in R is an *n²*
-algorithm, this repository currently contains a _k*log(n)_ solution.
+algorithm, this repository currently contains two algorithms for _weighted
+random sampling_:
+
+### Binary solution ###
+
+Uses a simple binary tree with
+
+* Sampling time: _O(k*log(n))_
+* Preprocessing time: _O(n)_
+
+Can be accessed using `method='binary'`.
+
+### RSTree Solution ###
+
+A more complicated tree with with the following
+
+* Sampling time: _O(k * log(log(n)))_ expected
+* Preprocessing time: _O(n)_
+
+Can be accessed using `method='rstree'`.
 
 # Installation #
 
