@@ -14,10 +14,6 @@
 #include <immintrin.h>
 #include <stdint.h>
 
-inline double xfrac (double x) {
-	return x - floor(x);
-}
-
 extern unsigned int I1, I2;
 
 inline double xuni_rand(void) {
@@ -63,8 +59,6 @@ void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 
 void shuffle_array(int n, double *w);
-
-void sort_array(int n, double *w);
 
 void normalize_array(int n, double *w);
 #endif

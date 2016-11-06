@@ -7,24 +7,15 @@
 #include <stdbool.h> /* bool */
 #include <math.h>
 
+#include "defs.h"
+
 #include "xutil.h"
 
 unsigned int I1 = 1234;
 unsigned int I2 = 5678;
 
-extern inline double xfrac (double x);
 extern inline double xuni_rand(void);
 extern inline int    xceil_log2(unsigned long long x);
-
-int compare (const void *a, const void *b) {
-	double *A = (double*) (a),
-		   *B = (double*) (b);
-	return *B >= *A;
-}
-
-void sort_array(int n, double *w) {
-	qsort(w, n, sizeof(double), compare);
-}
 
 void shuffle_array(int n, double *w) {
 	int i;
