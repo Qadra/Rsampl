@@ -5,6 +5,7 @@
 #include <R.h>
 #include <R_ext/RS.h> /* For Calloc etc. */
 #include <Rinternals.h>
+#include <Rdefines.h>
 
 #include <stdbool.h>
 #include <string.h>
@@ -13,7 +14,7 @@ void r_wrs_finalizer(SEXP ds_);
 void wrs_set_method_t(const char *name, method_t *ptr);
 
 // WRS without replacement
-SEXP r_wrs_sample(SEXP W_, SEXP k_, SEXP methodstr_, SEXP ds_) {
+SEXP r_wrs_sample(SEXP W_, SEXP k_, SEXP methodstr_, SEXP ds_, SEXP draws_) {
 	SEXP res;
 	int k = asInteger(k_);
 
@@ -26,6 +27,8 @@ SEXP r_wrs_sample(SEXP W_, SEXP k_, SEXP methodstr_, SEXP ds_) {
 			 *method_ptr;
 
 	if(!has_struct) {
+		// We assume that it has been check that W_ is a parameter.
+
 		double *W = REAL(W_); // The weights
 		int n = XLENGTH(W_);  // Could be bigger than an int type.. <- TODO
 
@@ -43,13 +46,43 @@ SEXP r_wrs_sample(SEXP W_, SEXP k_, SEXP methodstr_, SEXP ds_) {
 		method_ptr = R_ExternalPtrAddr(ds_);
 	}
 
-	// Create return output
-	res = PROTECT(allocVector(INTSXP, k));
+	int draws = 0;
+
+	//Rprintf("Draws is type: %s\n", type2char(TYPEOF(draws_)));
+	if (!isNull(draws_) && isInteger(draws_)) {
+		draws = asInteger(draws_);
+		//Rprintf("Draws is size: %d\n", draws);
+	}
 
 	// Do the sampling
-	GetRNGstate();
-	wrs_sample(method_ptr, k, INTEGER(res));
-	PutRNGstate();
+	if (draws == 0) { // Number of draws is unspecified
+		res = PROTECT(allocVector(INTSXP, k));
+		GetRNGstate();
+		wrs_sample(method_ptr, k, INTEGER(res));
+		PutRNGstate();
+	} else { // Specific number of draws
+		res = PROTECT(allocMatrix(INTSXP, k, draws));
+
+		/* Currently I don't see this making sense.
+		SEXP dimnames;
+
+		// Specify dimension names
+		PROTECT(dimnames = allocVector(VECSXP, 2));
+		SET_VECTOR_ELT(dimnames, 0, GET_NAMES(k_));
+		SET_VECTOR_ELT(dimnames, 1, GET_NAMES(draws_));
+
+		setAttrib(res, R_DimNamesSymbol, dimnames);
+		*/
+
+		int *arr = INTEGER(res);
+
+		for (int i = 0; i < draws; i++) {
+			GetRNGstate();
+			int *l_arr = &arr[i * k];
+			wrs_sample(method_ptr, k, l_arr);
+			PutRNGstate();
+		}
+	}
 
 	// Cleanup allocated memory
 	if (!has_struct) {
@@ -57,6 +90,7 @@ SEXP r_wrs_sample(SEXP W_, SEXP k_, SEXP methodstr_, SEXP ds_) {
 	}
 
 	UNPROTECT(1);
+
 	return res;
 }
 
@@ -103,6 +137,6 @@ void wrs_set_method_t(const char *name, method_t *method) {
 		method->sample     = (sample_fp_t)    rstree_sample;
 		method->free       = (free_fp_t)      rstree_free;
 	} else {
-		error("Unknown method");
+		error("Parameter 'method' must be either 'binary' or 'rstree'");
 	}
 }

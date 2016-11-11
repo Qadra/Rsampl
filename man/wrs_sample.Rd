@@ -4,7 +4,8 @@
 \alias{wrs_sample}
 \title{Perform Weighted Random Sampling}
 \usage{
-wrs_sample(A = NULL, W = NULL, k = 1, method = "binary", struct)
+wrs_sample(A = NULL, W = NULL, k = 1, method = "binary", struct,
+  draws = NULL)
 }
 \arguments{
 \item{A}{A vector/list of indices to sample. This value is not needed if
@@ -30,6 +31,10 @@ Perform Weighted Random Sampling
 wrs_sample(1:100, rep(1/100, 100), k = 10, method='binary')
 
 wrs_sample(1:100, rep(1/100, 100), k = 10, method='rstree')
+
+# To use preprocessing do the following: 
+struct <- wrs_preprocess(1:100, rep(1/100, 100), k = 10)
+samples <- wrs_sample(k=10, struct=struct)
 
 }
 

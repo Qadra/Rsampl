@@ -15,8 +15,6 @@ wrs_preprocess(A, W, k = 1, method = "binary")
 
 \item{method}{Must be either 'binary' or 'rstree'. This determines the
 sampling method used.}
-
-\item{struct}{a preprocessed chunk of data.}
 }
 \value{
 \code{S} Prepared structure for sampling.
