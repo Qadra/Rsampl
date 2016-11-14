@@ -1,4 +1,4 @@
-check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct) {
+check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct = NULL) {
 	if (!missing(A)) {
 		if (length(A) != length(W)) {
 			stop("input A and W must be of same length")
@@ -7,7 +7,7 @@ check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct) 
 
 	if (missing(struct)) {
 		if (missing(A) | missing(W)) {
-			error("missing either struct or both A and W")
+			stop("missing either struct or both A and W")
 		}
 	}
 
@@ -55,9 +55,12 @@ wrs_sample <- function(A = NULL, W = NULL, k = 1, method = 'binary', struct, dra
 
 	# Select the indexes and remove zero indexing
 	if (!is.null(draws)) {
-		idx <- apply(idx, 1:2, function(x,i ) {return(i[x+1])}, A)
+		# This seems to be the fastest method.
+		dims = dim(idx)
+		idx <- A[idx + 1]
+		dim(idx) <- dims
 	} else {
-		idx <- A[idx]
+		idx <- A[idx + 1]
 	}
 
 	return(idx)
@@ -73,7 +76,7 @@ wrs_sample <- function(A = NULL, W = NULL, k = 1, method = 'binary', struct, dra
 #' @return \code{S} Prepared structure for sampling.
 #' @export
 wrs_preprocess <- function(A, W, k = 1, method = 'binary') {
-	check_preconditions_for_wrs(A, W, k, method, struct)
+	check_preconditions_for_wrs(A, W, k, method)
 
 	#' @useDynLib Rsampl r_wrs_preprocess
 	str <- .Call(r_wrs_preprocess, W, k, method)

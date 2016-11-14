@@ -34,3 +34,32 @@ benchmark <- function(n = 1000, k = 250, times=1000) {
 
 	return(bm)
 }
+
+do_sample_fast_bin <- function(A, W, k, s) {
+	bin_pre <- wrs_preprocess(A, W, k=250, method='binary')
+
+	samples = wrs_sample(A=A, W=W, k=k, struct=bin_pre, draws=s)
+}
+
+do_sample_slow_bin <- function(A, W, k, s) {
+	bin_pre <- wrs_preprocess(A, W, k=250, method='binary')
+
+	samples = matrix(nrow=k, ncol=0)
+	for (i in 1:s) {
+		sample = wrs_sample(A=A, W=W, k=k, struct=bin_pre)
+		samples <- cbind(samples, sample)
+	}
+}
+
+benchmark_multisample <- function(n = 1000, k = 250, s = 1000, times = 100) {
+	W <- rexp(n)
+	W <- W/sum(W)
+	A <- 1:n
+
+	bm <- microbenchmark(times = times,
+						 FAST=do_sample_fast_bin(A, W, k, s),
+						 SLOW=do_sample_slow_bin(A, W, k, s)
+						 )
+
+	return(bm)
+}
