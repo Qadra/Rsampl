@@ -116,7 +116,7 @@ test_that_preprocessing_and_sampling_works <- function(method)  {
 	I <- 1:n
 	W <- runif(n)
 	W <- W/sum(W)
-	k <- n
+	k <- n/4
 
 	ptr <- wrs_preprocess(I, W, k=k, method=method)
 

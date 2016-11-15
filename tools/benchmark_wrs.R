@@ -20,9 +20,10 @@ benchmark <- function(n = 1000, k = 250, times=1000) {
 
 	bm <- microbenchmark(times=times,
 						 BIN=Rsampl::wrs_sample(1:n, B, k, method="binary"),
-						 BINP=Rsampl::wrs_sample(k=k, struct=bin_pre),
+						 BINP=Rsampl::wrs_sample(1:n, B, k=k, struct=bin_pre),
 						 RSTREE=Rsampl::wrs_sample(1:n, B, k, method="rstree"),
-						 RSTREEP=Rsampl::wrs_sample(k=k, struct=rstree_pre),
+						 RSTREEP=Rsampl::wrs_sample(1:n, B, k=k, struct=rstree_pre),
+						 SRMETHOD=Rsampl::wrs_sample(1:n, B, k=k, method="srmethod"),
 						 CCRANK=sample_int_ccrank(n, k, B),
 						 CRANK=sample_int_crank(n, k, B),
 						 EXPJ=sample_int_expj(n, k, B),
@@ -62,4 +63,51 @@ benchmark_multisample <- function(n = 1000, k = 250, s = 1000, times = 100) {
 						 )
 
 	return(bm)
+}
+
+benchmark_normal_distribution <- function(n = 10000, times=100, sd=250) {
+	library(data.table)
+
+	D <- dnorm(1:n, sd=sd, mean=as.integer(n/2))
+	#D <- runif(1:n); D <- D/sum(D)
+
+	I <- 1:n
+	k <- 10
+
+	out <- data.table()
+
+	rstree <- wrs_preprocess(I, D, k, method='rstree')
+	srmethod <- wrs_preprocess(I, D, k, method='srmethod')
+	bin <- wrs_preprocess(I, D, k, method='binary')
+
+	repeat {
+		bm <- microbenchmark(times=times,
+							 RSTree=wrs_sample(I,D,k,   method='rstree'),
+							 SRMethod=wrs_sample(I,D,k, method='srmethod'),
+							 Binary=wrs_sample(I,D,k,   method='binary'),
+							 unit='ns',
+							 control=list(warmup=8)
+							 )
+
+		dt <- data.table(bm)[, lapply(.SD, mean), by=(expr)]
+
+		dt <- cbind(dt, data.table(k=rep(k, length(dt))))
+
+		out <- rbind(out, dt)
+
+		if (dt[which(dt$expr == 'SRMethod')]$time > 1e8) {
+			break
+		}
+
+		if (k > 2000) {
+			break
+		}
+
+		k <- k + 10
+
+	}
+
+	names(out) <- c('Method', '$ns$', 'k')
+
+	return(out)
 }

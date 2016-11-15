@@ -1,6 +1,7 @@
 #include "sample.h"
 #include "exact.h"
 #include "rstree.h"
+#include "exact_walkers.h"
 
 #include <R.h>
 #include <R_ext/RS.h> /* For Calloc etc. */
@@ -136,7 +137,11 @@ void wrs_set_method_t(const char *name, method_t *method) {
 		method->preprocess = (preprocess_fp_t)rstree_preprocess;
 		method->sample     = (sample_fp_t)    rstree_sample;
 		method->free       = (free_fp_t)      rstree_free;
+	} else if (strncmp(name, "srmethod", 100) == 0) {
+		method->preprocess = (preprocess_fp_t)exact_walkers_preprocess;
+		method->sample     = (sample_fp_t)    exact_walkers_sample;
+		method->free       = (free_fp_t)      exact_walkers_free;
 	} else {
-		error("Parameter 'method' must be either 'binary' or 'rstree'");
+		error("Parameter 'method' must be either 'binary', 'rstree' or 'srmethod'");
 	}
 }
