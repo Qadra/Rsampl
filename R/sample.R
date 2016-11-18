@@ -28,6 +28,9 @@ check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct =
 #' @param method Must be either 'binary' or 'rstree'. This determines the
 #'               sampling method used.
 #' @param struct a preprocessed chunk of data.
+#' @param draws The number of samples to draw. By default this method returns
+#'              a vector of indices. If draws is specified, the function
+#'              returns a matrix with dimensions (k, draws).
 #' @return \code{k} indices sampled according to weights
 #' @examples
 #' wrs_sample(1:100, rep(1/100, 100), k = 10, method='binary')
@@ -37,6 +40,11 @@ check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct =
 #' # To use preprocessing do the following: 
 #' struct <- wrs_preprocess(1:100, rep(1/100, 100), k = 10)
 #' samples <- wrs_sample(k=10, struct=struct)
+#'
+#' # Do many draws in a single sampling operation, same as running a for loop
+#' # and sampling 5 times, but faster. Returns a matrix.
+#' struct <- wrs_preprocess(1:100, rep(1/100, 100), k = 10)
+#' samples <- wrs_sample(k=10, struct=struct, draws=5)
 #'
 #' @export
 wrs_sample <- function(A = NULL, W = NULL, k = 1, method = 'binary', struct, draws=NULL) {
@@ -57,10 +65,17 @@ wrs_sample <- function(A = NULL, W = NULL, k = 1, method = 'binary', struct, dra
 	if (!is.null(draws)) {
 		# This seems to be the fastest method.
 		dims = dim(idx)
-		idx <- A[idx + 1]
-		dim(idx) <- dims
+	}
+
+	if (!is.null(struct)) {
+		# Use the indexes we have saved from the preprocessing.
+		idx <- attributes(struct)$A[idx + 1]
 	} else {
 		idx <- A[idx + 1]
+	}
+
+	if (!is.null(draws)) {
+		dim(idx) <- dims
 	}
 
 	return(idx)
@@ -80,6 +95,8 @@ wrs_preprocess <- function(A, W, k = 1, method = 'binary') {
 
 	#' @useDynLib Rsampl r_wrs_preprocess
 	str <- .Call(r_wrs_preprocess, W, k, method)
+
+	attributes(str) <- list(A = A)
 
 	return(str)
 }

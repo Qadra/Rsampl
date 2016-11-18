@@ -105,6 +105,17 @@ test_parameters_without_struct <- function(method) {
 		})
 }
 
+test_using_draws <- function(method) {
+	n <- 100
+	A <- 1:n
+	W <- runif(n); W <- W/sum(W)
+	k <- 10
+	draws <- 15
+
+	out <- wrs_sample(A, W, k, draws=draws)
+
+	expect_equal(dim(out), c(10, 15))
+}
 
 
 #}}}
@@ -133,6 +144,8 @@ test_all <- function(method) {
 	test_for_same_length_input(method)
 	test_real_samples(method)
 	test_uniform_input(method)
+
+	test_using_draws(method)
 
 	test_parameters_without_struct(method)
 

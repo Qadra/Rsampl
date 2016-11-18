@@ -22,14 +22,14 @@ test_that("wrs_sample rejects invalid methods",  {
 test_that("distributions should be similar", {
 			  set.seed(124124)
 			  n <- 20
-			  n_samples <- 500000
+			  n_samples <- 30000
 			  A <- 1:n
 			  W <- runif(n)
 			  W <- W/sum(W)
 			  k <- 10
-			  #print(W)
 
-			  ptm <- proc.time()
+
+			  #ptm <- proc.time()
 
 			  bin_struct <- wrs_preprocess(A, W, k, method="binary")
 			  rstree_struct <- wrs_preprocess(A, W, k, method="rstree")
@@ -38,23 +38,12 @@ test_that("distributions should be similar", {
 			  rstree <- vector(mode='integer', length=n)
 
 			  sample <- wrs_sample(A, W, k=k, struct=bin_struct, draws=n_samples)
-
-			  #for (i in 1:dim(sample)[1]) for (j in 1:dim(sample)[2]) bin[sample[i, j]] = bin[sample[i,j]] + 1
-
 			  sample <- wrs_sample(A, W, k=k, struct=rstree_struct, draws=n_samples)
 
-			  #for (i in 1:dim(sample)[1]) for (j in 1:dim(sample)[2]) rstree[sample[i, j]] = rstree[sample[i,j]] + 1
+			  #print(proc.time() - ptm)
 
-			  #for (i in 1:n_samples) {
-			  #    sample <- wrs_sample(A, W, k=k, struct=bin_struct)
-			  #    bin[sample] <- bin[sample] + 1
-
-			  #    sample <- wrs_sample(A, W, k=k, struct=rstree_struct)
-			  #    rstree[sample] <- rstree[sample] + 1
-			  #}
-
-			  print(proc.time() - ptm)
 
 			  sum_of_squared_errors <- sqrt(sum((bin/n_samples - rstree/n_samples)^2))
+
 			  #expect_equal(0, sum_of_squared_errors)
 })

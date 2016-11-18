@@ -20,6 +20,10 @@ needed if struct has been initialized and passed.}
 sampling method used.}
 
 \item{struct}{a preprocessed chunk of data.}
+
+\item{draws}{The number of samples to draw. By default this method returns
+a vector of indices. If draws is specified, the function
+returns a matrix with dimensions (k, draws).}
 }
 \value{
 \code{k} indices sampled according to weights
@@ -35,6 +39,11 @@ wrs_sample(1:100, rep(1/100, 100), k = 10, method='rstree')
 # To use preprocessing do the following: 
 struct <- wrs_preprocess(1:100, rep(1/100, 100), k = 10)
 samples <- wrs_sample(k=10, struct=struct)
+
+# Do many draws in a single sampling operation, same as running a for loop
+# and sampling 5 times, but faster. Returns a matrix.
+struct <- wrs_preprocess(1:100, rep(1/100, 100), k = 10)
+samples <- wrs_sample(k=10, struct=struct, draws=5)
 
 }
 
