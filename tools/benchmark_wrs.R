@@ -65,7 +65,7 @@ benchmark_multisample <- function(n = 1000, k = 250, s = 1000, times = 100) {
 	return(bm)
 }
 
-benchmark_normal_distribution <- function(n = 10000, times=100, sd=250) {
+benchmark_normal_distribution <- function(n = 10000, times=100, sd=250, limit = 1e9) {
 	library(data.table)
 
 	D <- dnorm(1:n, sd=sd, mean=as.integer(n/2))
@@ -82,24 +82,25 @@ benchmark_normal_distribution <- function(n = 10000, times=100, sd=250) {
 
 	repeat {
 		bm <- microbenchmark(times=times,
-							 RSTree=wrs_sample(I,D,k,   method='rstree'),
-							 SRMethod=wrs_sample(I,D,k, method='srmethod'),
-							 Binary=wrs_sample(I,D,k,   method='binary'),
+							 RSTree=  wrs_sample(I,D,k, struct=rstree,   method='rstree'),
+							 SRMethod=wrs_sample(I,D,k, struct=srmethod, method='srmethod'),
+							 Binary=  wrs_sample(I,D,k, struct=bin,      method='binary'),
 							 unit='ns',
 							 control=list(warmup=8)
 							 )
 
+		# Calculate the average of the amount of samples
 		dt <- data.table(bm)[, lapply(.SD, mean), by=(expr)]
-
-		dt <- cbind(dt, data.table(k=rep(k, length(dt))))
+		# Add a column with k
+		dt <- dt[, k := k]
 
 		out <- rbind(out, dt)
 
-		if (dt[which(dt$expr == 'SRMethod')]$time > 1e8) {
+		if (dt[which(dt$expr == 'SRMethod')]$time > limit) {
 			break
 		}
 
-		if (k > 2000) {
+		if (k > 1000) {
 			break
 		}
 
@@ -107,7 +108,7 @@ benchmark_normal_distribution <- function(n = 10000, times=100, sd=250) {
 
 	}
 
-	names(out) <- c('Method', '$ns$', 'k')
+	names(out) <- c('Method', 'ns', 'k')
 
 	return(out)
 }
