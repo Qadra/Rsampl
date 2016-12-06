@@ -34,7 +34,7 @@ static inline int __bucket_index(double pi, int64_t L) {
 	T rep = {
 		.f = pi
 	};
-
+	
 	//int preexp;
 	//frexp(pi, &preexp);
 
@@ -188,7 +188,7 @@ rstree_t *rstree_preprocess(double *weights, int n, int k) {
 				// This means we don't hit the else case here and thus our
 				// node is not copied into the array. For this reason we need
 				// to add it to the tree here.
-
+				
 				a->index = inline_index;
 				this->buckets[a->array.bucket_index] = &inline_tree[inline_index];
 				memcpy(&inline_tree[inline_index], a, sizeof(node_t));
@@ -283,7 +283,7 @@ int rstree_sample(rstree_t *this, int k, int *sampled) {
 	node_t *nodes = st->tree;
 	double *w = st->w;
 	int sampled_buckets = 0;
-
+	
 	queue_t *qA = &st->queue;
 
 	// We sample k numbers.

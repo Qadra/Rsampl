@@ -77,7 +77,7 @@ int exact_walkers_sample(exact_walkers_t *this, int k, int *sampled) {
 
 void exact_walkers_free(exact_walkers_t *this) {
 	if (this != NULL) {
-		walkers_free(this->w);
+		XFREE(this->w);
 		XFREE(this->bv);
 		XFREE(this);
 	}

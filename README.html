@@ -1,0 +1,143 @@
+<h1>Rsampl</h1>
+
+<p><a href="https://travis-ci.org/Qadra/Rsampl"><img src="https://travis-ci.org/Qadra/Rsampl.svg?branch=master" alt="Build Status" title="" /></a>
+<a href="https://codecov.io/gh/Qadra/Rsampl"><img src="https://codecov.io/gh/Qadra/Rsampl/branch/master/graph/badge.svg" alt="codecov" title="" /></a></p>
+
+<p>Implementation of Weighted Random Sampling algorithms for R.</p>
+
+<p>The current implementation of Weighted Random Sampling in R is an <em>n²</em>
+algorithm, this repository currently contains two algorithms for <em>weighted
+random sampling</em>:</p>
+
+<h3>Binary solution</h3>
+
+<p>Uses a simple binary tree with</p>
+
+<ul>
+<li>Sampling time: <em>O(k*log(n))</em></li>
+<li>Preprocessing time: <em>O(n)</em></li>
+</ul>
+
+<p>Can be accessed using <code>method='binary'</code>.</p>
+
+<h3>RSTree Solution</h3>
+
+<p>A more complicated tree with with the following</p>
+
+<ul>
+<li>Sampling time: <em>O(k * log(log(n)))</em> expected</li>
+<li>Preprocessing time: <em>O(n)</em></li>
+</ul>
+
+<p>Can be accessed using <code>method='rstree'</code>.</p>
+
+<h1>Installation</h1>
+
+<p>When the repository has been cloned you can use <code>R CMD INSTALL .</code> in the cloned
+directory to install the package in your user <strong>R</strong> installation.</p>
+
+<h1>Usage</h1>
+
+<p>To load the package execute <code>library(Rsampl)</code>. Usage examples can be found
+using e.g. <code>?Rsample::wrs_sample</code>. The following are some basic usage examples.</p>
+
+<h3>Using without preprocessing</h3>
+
+<p>Weighted Random Sampling without preprocessing:
+```R
+library(Rsampl)</p>
+
+<h1>The number of indices we sample from</h1>
+
+<p>n &lt;- 100</p>
+
+<h1>The number of indices we sample on each sample. Precondition: k &lt;= n</h1>
+
+<p>k &lt;- 10</p>
+
+<h1>Indexes we sample from</h1>
+
+<p>I &lt;- 1:n</p>
+
+<h1>The weights on which elements are selected</h1>
+
+<p>W &lt;- runif(n)
+W &lt;- W/sum(W) # Normalize input!</p>
+
+<h1>Sampling using a binary tree</h1>
+
+<p>samples &lt;- wrs(I, W, k)</p>
+
+<h1>is equal to</h1>
+
+<p>samples &lt;- wrs(I, W, k=k, method="binary")</p>
+
+<h1>The same for the RSTree</h1>
+
+<p>samples &lt;- wrs(I, W, k=k, method="rstree")
+```</p>
+
+<h3>Usage with preprocessing</h3>
+
+<p>This library supports preparing the data structure as a separate step from the
+actual sampling. If many samples need to be drawn from the same data
+distribution, this leads to performance improvements.</p>
+
+<p>```R
+library(Rsampl)</p>
+
+<h1>The number of indices we sample from</h1>
+
+<p>n &lt;- 100</p>
+
+<h1>The number of indices we sample on each sample. Precondition: k &lt;= n</h1>
+
+<p>k &lt;- 10</p>
+
+<h1>Indexes we sample from</h1>
+
+<p>I &lt;- 1:n</p>
+
+<h1>The weights on which elements are selected</h1>
+
+<p>W &lt;- runif(n)
+W &lt;- W/sum(W) # Normalize input!</p>
+
+<h1>Generate the data structure to sample from:</h1>
+
+<p>binary<em>structure &lt;- wrs</em>preprocessing(I, W, k, method='binary')</p>
+
+<h1>Draw samples using the structure</h1>
+
+<p>samples &lt;- wrs(k=k, struct=binary_structure)</p>
+
+<p>```</p>
+
+<h1>Development</h1>
+
+<p>The following packages are required: <code>devtools</code>, <code>roxygen2</code>.</p>
+
+<p>Start <strong>R</strong> in the base of the package directory load <code>devtools</code> and run unit
+tests using <code>test()</code> (or <code>devtools::test()</code>).</p>
+
+<p>After writing code you can refresh the package using <code>R CMD INSTALL .</code> followed
+by <code>reload()</code> from the <code>devtools</code> package.</p>
+
+<p>Before committing packages be sure to run <code>roxygenize()</code> followed by <code>check()</code>.
+Warnings may be treated as build errors by Travis.
+The <code>roxygenize()</code> command creates manuals and the <code>NAMESPACE</code> file from
+comments in the included <strong>R</strong> code.</p>
+
+<p>To view code coverage use the package <code>covr</code> and any of the following:
+```R</p>
+
+<h1>For just percentages</h1>
+
+<p>package_coverage()</p>
+
+<h1>For browsable webinterface with code coverage</h1>
+
+<p>report(package_coverage())
+```</p>
+
+<h1>FAQ</h1>
