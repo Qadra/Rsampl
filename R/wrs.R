@@ -10,12 +10,6 @@ check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct =
 			stop("missing either struct or both A and W")
 		}
 	}
-
-	#methods <- c('binary', 'rstree')
-
-	#if (!method %in% methods) {
-	#	stop(paste("Parameter method must be in: (", paste(methods, collapse=", "), ")", sep=""))
-	#}
 }
 
 #' Perform Weighted Random Sampling

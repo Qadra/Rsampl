@@ -65,11 +65,33 @@ benchmark_multisample <- function(n = 1000, k = 250, s = 1000, times = 100) {
 	return(bm)
 }
 
-benchmark_normal_distribution <- function(n = 10000, times=100, sd=250, limit = 1e9) {
+generate_normal_data <- function(n, sd) {
+	d <- dnorm(1:n, sd=sd, mean=n%/%2)
+
+	d <- (d/max(d) * (2^32-1)) %/% 1
+	d[which(d==0)] <- 1
+	d <- d/sum(d)
+
+	return(d)
+}
+
+generate_exp_data <- function(n, r) {
+	d <- dexp(1:n, r)
+
+	d <- (d/max(d) * (2^32-1)) %/% 1
+	d <- d[which(d>0)]/sum(d)
+
+	return(d)
+}
+
+benchmark_normal_distribution <- function(n = 10000, times=100, sd=250, limit = 1e9, D=NULL) {
 	library(data.table)
 
-	D <- dnorm(1:n, sd=sd, mean=as.integer(n/2))
-	#D <- runif(1:n); D <- D/sum(D)
+	if (missing(D)) {
+		D <- dnorm(1:n, sd=sd, mean=as.integer(n/2))
+	} else {
+		n <- length(D)
+	}
 
 	I <- 1:n
 	k <- 10
