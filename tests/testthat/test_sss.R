@@ -17,9 +17,10 @@ test_that_sampling_with_preprocessing_works <- function() {
 
 	str = preprocess_sample_subset(W)
 
-	idxs <- sample_subset(struct=str)
-
-	expect_true(!is.null(idxs))
+	for (i in 1:100) {
+		idxs <- sample_subset(struct=str)
+		expect_true(!is.null(idxs))
+	}
 
 	rm(str)
 }

@@ -188,7 +188,7 @@ int uss_sample(uss_t *uss, int **output) {
 		ridx  = uss->index[idx];
 		p_hat = uss->p_hat[idx];
 
-		if ( xuni_rand() < uss->w[ridx]/p_hat ) {
+		if ( XRANDFUN() < uss->w[ridx]/p_hat ) {
 			if ( alloced == sampled ) {
 				uss->mu = alloced = alloced*2;
 				uss->samples = samples = XREALLOC(samples, alloced, int);
