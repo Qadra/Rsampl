@@ -151,7 +151,7 @@ int sss_sample(sss_t *sss, int **sampled) {
 			v = 0;
 
 			if (p2k < 1.) {
-				rand = XRANDFUN();
+				rand = xuni_rand();
 
 				if ( first ) {
 					first = false;
@@ -209,7 +209,7 @@ int sss_sample(sss_t *sss, int **sampled) {
 
 		assert( b > 0 );
 
-		if (XRANDFUN() <= a/b) {
+		if (xuni_rand() <= a/b) {
 			output[i] = output[j];
 			i++;
 		}

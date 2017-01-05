@@ -106,15 +106,17 @@ test_parameters_without_struct <- function(method) {
 }
 
 test_using_draws <- function(method) {
-	n <- 100
-	A <- 1:n
-	W <- runif(n); W <- W/sum(W)
-	k <- 10
-	draws <- 15
+	test_that("Using draws should work", {
+		n <- 100
+		A <- 1:n
+		W <- runif(n); W <- W/sum(W)
+		k <- 10
+		draws <- 15
 
-	out <- wrs_sample(A, W, k, draws=draws)
+		out <- wrs_sample(A, W, k, draws=draws)
 
-	expect_equal(dim(out), c(10, 15))
+		expect_equal(dim(out), c(10, 15))
+	})
 }
 
 
@@ -123,18 +125,20 @@ test_using_draws <- function(method) {
 # {{{ Test functions with preprocessing
 
 test_that_preprocessing_and_sampling_works <- function(method)  {
-	n <- 100
-	I <- 1:n
-	W <- runif(n)
-	W <- W/sum(W)
-	k <- n/4
+	test_that("Preprocessing and sampling works", {
+		n <- 100
+		I <- 1:n
+		W <- runif(n)
+		W <- W/sum(W)
+		k <- n/4
 
-	ptr <- wrs_preprocess(I, W, k=k, method=method)
+		ptr <- wrs_preprocess(I, W, k=k, method=method)
 
-	sample <- wrs_sample(k=k, struct=ptr, method=method)
-	sample <- wrs_sample(k=k, struct=ptr, method=method)
+		sample <- wrs_sample(k=k, struct=ptr, method=method)
+		sample <- wrs_sample(k=k, struct=ptr, method=method)
 
-	rm(ptr)
+		rm(ptr)
+	})
 }
 
 # }}}

@@ -11,6 +11,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+// For basename()
+#include <libgen.h>
+#include <stdlib.h>
+
+
 void r_wrs_finalizer(SEXP ds_);
 void wrs_set_method_t(const char *name, method_t *ptr);
 
@@ -144,4 +149,78 @@ void wrs_set_method_t(const char *name, method_t *method) {
 	} else {
 		error("Parameter 'method' must be either 'binary', 'rstree' or 'srmethod'");
 	}
+}
+
+int print_node(node_t *nodes, FILE *dot, int idx, int rank, int name, double *w) {
+	node_t *node = &nodes[idx];
+	if (node->type == NODE_TREE) {
+
+		fprintf(dot, "%d [rank=%d, label=\""
+				"Internal\n"
+				"sum: %f\\l"
+				"Inline index = %d\\l"
+				"Left index = %d\\l"
+				"Right index = %d\\l"
+				"Parent index = %d\\l"
+				"\"];\n",
+				name, rank, node->internal.child_sum,
+				node->index,
+				node->internal.left_index,
+				node->internal.right_index,
+				node->parent_index
+				);
+
+		//fprintf(dot, "rankdir=LR;\n");
+
+		int lname = print_node(nodes, dot, node->internal.left_index, rank + 1, name + 1, w);
+
+		fprintf(dot, "%d -> %d;", name, name + 1);
+
+		int rname = print_node(nodes, dot, node->internal.right_index, rank + 1, lname + 1, w);
+		fprintf(dot, "%d -> %d;", name, lname + 1);
+
+		return rname;
+	} else {
+		//arr_t *ar = &node->array;
+
+		fprintf(dot,
+				"%d [rank=%d, shape=box, label=\""
+				"Array {\\N}\\n"
+				"sum = %e\\l"
+				"size = %d\\l"
+				"p_hat = %e\\l"
+				"Bucket index = %d\\l"
+				"Sampled size = %d\\l"
+				"Inline index = %d\\l"
+				"Parent index = %d\\l"
+				"Offset=%d\\l\"];\n",
+				name, rank, node->array.sum, node->array.size,
+				node->array.p_hat, node->array.bucket_index,
+				node->array.sampled_size, node->index, 
+				node->parent_index, node->array.offset);
+
+		return name;
+	}
+
+	return 0;
+}
+
+SEXP print_rstree(SEXP filename_, SEXP ds_) {
+	method_t *method_ptr = R_ExternalPtrAddr(ds_);
+	rstree_t *ds = (rstree_t *)method_ptr->data;
+	
+	char *filename = strdup(CHAR(asChar(filename_)));
+
+	FILE *dot = fopen(filename, "w");
+	char *name = basename(filename);
+	fprintf(dot, "digraph \"%s\" {", name);
+
+	print_node(ds->tree, dot, 0, 0, 0, ds->w);
+
+	fprintf(dot, "}");
+	fclose(dot);
+
+	free(filename);
+
+	return R_NilValue;
 }

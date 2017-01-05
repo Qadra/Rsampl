@@ -1,17 +1,3 @@
-check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct = NULL) {
-	if (!missing(A)) {
-		if (length(A) != length(W)) {
-			stop("input A and W must be of same length")
-		}
-	}
-
-	if (missing(struct)) {
-		if (missing(A) | missing(W)) {
-			stop("missing either struct or both A and W")
-		}
-	}
-}
-
 #' Perform Weighted Random Sampling
 #' 
 #' @param A A vector/list of indices to sample. This value is not needed if
@@ -93,4 +79,24 @@ wrs_preprocess <- function(A, W, k = 1, method = 'binary') {
 	attributes(str) <- list(A = A)
 
 	return(str)
+}
+
+check_preconditions_for_wrs <- function(A, W, k = 1, method = 'binary', struct = NULL) {
+	if (!missing(A)) {
+		if (length(A) != length(W)) {
+			stop("input A and W must be of same length")
+		}
+	}
+
+	if (missing(struct)) {
+		if (missing(A) | missing(W)) {
+			stop("missing either struct or both A and W")
+		}
+	}
+}
+
+#' @export
+rstree_draw <- function(filename, struct) {
+	#' @useDynLib Rsampl print_rstree
+	.Call(print_rstree, "out.dot", struct)
 }

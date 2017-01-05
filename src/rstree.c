@@ -3,12 +3,14 @@
 #include "defs.h"
 #include "xutil.h"
 
+#include <stdio.h>
 #include <limits.h>
-#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+
+#include <inttypes.h>
 
 static int64_t mask = ~0xFFFFFFFFFFFFF,
 		mask2 = 0x7FF;
@@ -63,7 +65,7 @@ rstree_t *rstree_preprocess(double *weights, int n, int k) {
 	// Parameter k must be there because of function pointers in sample.h
 	(void)k;
 
-	int L = xceil_log2(n) * 1.3,
+	int L = 63,
 		*bucket_sizes  = XALLOC(L + 1, int),
 		*bucket_prefix = XALLOC(L + 1, int),
 		*reverse_map   = XALLOC(n,     int),
@@ -286,6 +288,8 @@ int rstree_sample(rstree_t *this, int k, int *sampled) {
 	
 	queue_t *qA = &st->queue;
 
+	//uint64_t rejects = 0;
+
 	// We sample k numbers.
 	for (int i = 0; i < k; i++) {
 		node_t *n = &nodes[0];
@@ -317,6 +321,7 @@ int rstree_sample(rstree_t *this, int k, int *sampled) {
 				if (XRANDFUN() > w[idx]/n->array.p_hat) {
 					// Cancel this sample.
 					i--;
+					//rejects += 1;
 					goto REDO;
 				}
 
@@ -407,6 +412,8 @@ REDO:
 			pindex = parent->parent_index;
 		}
 	}
+
+	//printf("Rejects: %"PRIu64"\n", rejects);
 
 	return 0;
 }

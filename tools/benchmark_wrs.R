@@ -79,12 +79,55 @@ generate_exp_data <- function(n, r) {
 	d <- dexp(1:n, r)
 
 	d <- (d/max(d) * (2^32-1)) %/% 1
-	d <- d[which(d>0)]/sum(d)
+	d[which(d==0)] <- 1
+	d <- d/sum(d)
 
 	return(d)
 }
 
-benchmark_normal_distribution <- function(n = 10000, times=100, sd=250, limit = 1e9, D=NULL) {
+benchmark_wrs_single <- function(n = 10000, ks = c(10), times=100, Ds=NULL) {
+	library(data.table)
+
+	if (missing(Ds)) {
+		Ds <- list(generate_exp_data(n, 1))
+	}
+
+	out <- data.table()
+
+	for (D in Ds) {
+		for (k in ks) {
+			I <- 1:length(D)
+
+			rstree <- wrs_preprocess(I, D, k, method='rstree')
+			srmethod <- wrs_preprocess(I, D, k, method='srmethod')
+			bin <- wrs_preprocess(I, D, k, method='binary')
+
+			bm <- microbenchmark(times=times,
+								 RSTree=  wrs_sample(I,D,k, struct=rstree,   method='rstree'),
+								 SRMethod=wrs_sample(I,D,k, struct=srmethod, method='srmethod'),
+								 Binary=  wrs_sample(I,D,k, struct=bin,      method='binary'),
+								 unit='ns',
+								 control=list(warmup=8)
+								 )
+
+			# Calculate the average of the amount of samples
+			dt <- data.table(bm)[, lapply(.SD, mean), by=(expr)]
+
+			# Add a column with k, n
+			dt <- dt[, k := k]
+			dt <- dt[, n := length(D)]
+
+			out <- rbind(out, dt)
+		}
+	}
+
+	names(out) <- c('Method', 'ns', 'k', 'n')
+
+	return(out)
+}
+
+
+benchmark_wrs_range <- function(n = 10000, times=100, sd=250, limit = 1e9, D=NULL) {
 	library(data.table)
 
 	if (missing(D)) {

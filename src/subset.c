@@ -45,9 +45,26 @@ SEXP r_subset_sample(SEXP W_, SEXP r_structure, SEXP draws_) {
 					   /*** Handle the actual draws ***/
 	SEXP res;
 
-	int n_indices = sss_sample(structure, &output);
-	res = PROTECT(allocVector(INTSXP, n_indices));
-	Memcpy(INTEGER(res), output, n_indices);
+	if (draws == 0) {
+		int n_indices = sss_sample(structure, &output);
+		res = PROTECT(allocVector(INTSXP, n_indices));
+		Memcpy(INTEGER(res), output, n_indices);
+	} else {
+
+		/* When using multiple draws return a list of integer vectors.
+		 * This seems like the best option since the samples aren't necessarily
+		 * of the same size.
+		 */
+		res = PROTECT(NEW_LIST(draws));
+
+		for (int i = 0; i < draws; i++) {
+			int n_indices = sss_sample(structure, &output);
+			SEXP row = PROTECT(allocVector(INTSXP, n_indices));
+			Memcpy(INTEGER(row), output, n_indices);
+
+			SET_ELEMENT(res, i, row);
+		}
+	}
 
 	free(output);
 
@@ -55,7 +72,7 @@ SEXP r_subset_sample(SEXP W_, SEXP r_structure, SEXP draws_) {
 		sss_free(structure);
 	}
 
-	UNPROTECT(1);
+	UNPROTECT(1 + draws);
 	return res;
 }
 

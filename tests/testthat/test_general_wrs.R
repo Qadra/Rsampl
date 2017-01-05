@@ -45,5 +45,7 @@ test_that("distributions should be similar", {
 
 			  sum_of_squared_errors <- sqrt(sum((bin/n_samples - rstree/n_samples)^2))
 
+			  #print(sum_of_squared_errors)
+
 			  #expect_equal(0, sum_of_squared_errors)
 })
