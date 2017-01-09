@@ -1,0 +1,35 @@
+=== Integration with sampling algorithms ===
+
+We need:
+- Specialized allocation/free functions
+- specialized methods for invoking errors
+- Easy code sharing between main branch and this branch
+
+- Add submodule which contains .so module
+  - Problem: Cannot easily (without function pointers eg.) control how to
+    allocate/deallocate memory.
+
+- Add the code wholesale into Rsampl
+  - Problem: The code is now detached from the main branch and updates must be
+    manually transferred between the two.
+
+- Copy the code from the main repo on every change
+  - Can use defines to overrule allocation functions et al.
+  - Problem: Requires some special tooling
+    - Makefile to copy files into src/?
+ 
+- Find a way to use a submodule and include only the {c,h} files we need.
+
+=== General TODO ===
+
+- Use R error function
+- Create interface to allow sampling a matrix, where each row is chosen from
+  the same distribution
+- Check the code for portability issues
+- Check for memory leaks ...
+- Decide on level of input sanitation
+- Add options:
+  - Add flag to indicate that the data sums to 1 so we don't need to normalize
+- How do we handle huge small buckets in the RSTree
+- Update the subsetsampling code so we don't use subset_t
+- Test if C++ can be faster than C
